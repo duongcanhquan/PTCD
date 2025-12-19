@@ -1,0 +1,380 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Hệ Thống Theo Dõi 9+</title>
+    <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700&display=swap" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
+    
+    <style>
+        :root {
+            --primary-color: #0056b3; /* Màu xanh đậm thương hiệu */
+            --accent-color: #ffc107;  /* Màu vàng nhấn */
+            --bg-color: #f0f4f8;
+        }
+
+        body {
+            font-family: 'Nunito', sans-serif;
+            background-color: var(--bg-color);
+            background-image: linear-gradient(120deg, #fdfbfb 0%, #ebedee 100%);
+            min-height: 100vh;
+        }
+
+        .app-container {
+            max-width: 600px; /* Giới hạn chiều rộng giống app điện thoại */
+            margin: 0 auto;
+            padding-bottom: 50px;
+        }
+
+        /* LOGO & HEADER */
+        .header-section {
+            text-align: center;
+            padding: 30px 20px 20px;
+        }
+        .logo-img {
+            width: 100px;
+            height: auto;
+            margin-bottom: 10px;
+            filter: drop-shadow(0 4px 6px rgba(0,0,0,0.1));
+        }
+        .app-title {
+            font-weight: 800;
+            color: var(--primary-color);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 0;
+            font-size: 1.5rem;
+        }
+        .app-subtitle {
+            color: #6c757d;
+            font-size: 0.9rem;
+        }
+
+        /* CARD GIAO DIỆN */
+        .main-card {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.08);
+            border: none;
+            overflow: hidden;
+            margin: 0 15px;
+        }
+
+        /* TABS */
+        .nav-tabs {
+            border-bottom: none;
+            background-color: #f8f9fa;
+            padding: 10px 10px 0;
+        }
+        .nav-tabs .nav-link {
+            border: none;
+            border-radius: 12px 12px 0 0;
+            color: #6c757d;
+            font-weight: 600;
+            padding: 12px 20px;
+            transition: all 0.3s;
+        }
+        .nav-tabs .nav-link.active {
+            background-color: white;
+            color: var(--primary-color);
+            border-bottom: 3px solid var(--primary-color);
+        }
+        .nav-tabs .nav-link:hover {
+            color: var(--primary-color);
+        }
+
+        /* FORM ELEMENTS */
+        .form-floating > .form-control:focus, 
+        .form-floating > .form-select:focus {
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 0.25rem rgba(0, 86, 179, 0.15);
+        }
+        
+        .btn-submit {
+            background: linear-gradient(45deg, #0056b3, #004494);
+            border: none;
+            border-radius: 12px;
+            padding: 12px;
+            font-weight: 700;
+            letter-spacing: 0.5px;
+            box-shadow: 0 4px 15px rgba(0, 86, 179, 0.3);
+            transition: transform 0.2s;
+        }
+        .btn-submit:active {
+            transform: scale(0.98);
+        }
+
+        /* KẾT QUẢ TRA CỨU */
+        .search-result-card {
+            background: #f8f9fa;
+            border-radius: 12px;
+            padding: 15px;
+            margin-top: 20px;
+            border-left: 5px solid var(--primary-color);
+        }
+        .badge-violation {
+            font-size: 0.85em;
+            padding: 6px 10px;
+            border-radius: 8px;
+        }
+        
+        /* FILE INPUT CUSTOM */
+        .file-upload-wrapper {
+            position: relative;
+            height: 50px;
+            border: 2px dashed #ced4da;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: #fafafa;
+            transition: border 0.3s;
+        }
+        .file-upload-wrapper:hover {
+            border-color: var(--primary-color);
+            background: #f0f7ff;
+        }
+        .file-upload-text {
+            color: #6c757d;
+            pointer-events: none;
+        }
+        .form-control[type="file"] {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            opacity: 0;
+            cursor: pointer;
+        }
+
+    </style>
+</head>
+<body>
+
+<div class="app-container">
+    <div class="header-section">
+        <img src="https://raw.githubusercontent.com/duongcanhquan/image/main/logo%20vietmy.webp" alt="Logo VietMy" class="logo-img">
+        <h1 class="app-title">HỆ THỐNG THEO DÕI 9+</h1>
+        <p class="app-subtitle">Quản lý nề nếp & Kỷ luật học sinh</p>
+    </div>
+
+    <div class="card main-card">
+        <ul class="nav nav-tabs" id="myTab" role="tablist">
+            <li class="nav-item w-50 text-center" role="presentation">
+                <button class="nav-link active w-100" id="report-tab" data-bs-toggle="tab" data-bs-target="#report-pane">
+                    <i class="bi bi-pencil-square"></i> Báo Cáo
+                </button>
+            </li>
+            <li class="nav-item w-50 text-center" role="presentation">
+                <button class="nav-link w-100" id="search-tab" data-bs-toggle="tab" data-bs-target="#search-pane">
+                    <i class="bi bi-search"></i> Tra Cứu
+                </button>
+            </li>
+        </ul>
+
+        <div class="card-body p-4">
+            <div class="tab-content">
+                
+                <div class="tab-pane fade show active" id="report-pane">
+                    <form id="incidentForm">
+                        
+                        <div class="form-floating mb-3">
+                            <input type="text" class="form-control" id="studentId" name="student_id" placeholder="HS001" required>
+                            <label for="studentId">Mã Học Sinh (VD: HS001)</label>
+                        </div>
+
+                        <div class="form-floating mb-3">
+                            <select class="form-select" id="violationType" name="violation_type" aria-label="Loại lỗi">
+                                <option value="Đi muộn" selected>⏰ Đi muộn / Sai đồng phục</option>
+                                <option value="Đánh nhau">💥 Đánh nhau / Gây gổ</option>
+                                <option value="Hút thuốc">🚬 Hút thuốc lá</option>
+                                <option value="Vô lễ">🤬 Vô lễ với giáo viên</option>
+                                <option value="Sử dụng ĐT">📱 Sử dụng điện thoại</option>
+                            </select>
+                            <label for="violationType">Chọn Hành Vi Vi Phạm</label>
+                        </div>
+
+                        <div class="form-floating mb-3">
+                            <textarea class="form-control" placeholder="Mô tả" id="description" name="description" style="height: 100px" required></textarea>
+                            <label for="description">Chi tiết sự việc & Lý do...</label>
+                        </div>
+
+                        <div class="mb-4">
+                            <label class="form-label fw-bold text-secondary small">📸 Ảnh minh chứng / Biên bản</label>
+                            <div class="file-upload-wrapper">
+                                <span class="file-upload-text" id="fileName"><i class="bi bi-cloud-upload"></i> Chạm để chọn ảnh</span>
+                                <input type="file" class="form-control" name="data" accept="image/*" required onchange="updateFileName(this)">
+                            </div>
+                        </div>
+
+                        <button type="submit" class="btn btn-primary w-100 btn-submit text-white" id="btnSubmit">
+                            <i class="bi bi-send-fill"></i> GỬI BÁO CÁO
+                        </button>
+                    </form>
+                    
+                    <div id="reportMsg" class="alert mt-3 text-center" style="display:none; border-radius: 12px;"></div>
+                </div>
+
+                <div class="tab-pane fade" id="search-pane">
+                    <div class="input-group mb-3">
+                        <span class="input-group-text bg-white border-end-0"><i class="bi bi-search"></i></span>
+                        <input type="text" class="form-control border-start-0" id="searchId" placeholder="Nhập Mã HS để tìm...">
+                        <button class="btn btn-primary" type="button" onclick="searchStudent()">Tìm</button>
+                    </div>
+
+                    <div id="searchLoading" class="text-center py-4 text-muted" style="display:none;">
+                        <div class="spinner-border text-primary spinner-border-sm" role="status"></div> Đang tải dữ liệu...
+                    </div>
+
+                    <div id="searchResult" style="display:none;">
+                        </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+    
+    <div class="text-center mt-4 text-muted small">
+        &copy; 2025 Hệ Thống Quản Lý Giáo Dục 9+
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+    // ⚠️ QUAN TRỌNG: Thay link Webhook của bạn vào đây
+    const WEBHOOK_URL = 'https://apchn-host.lapage.vn/webhook-test/incident-api'; 
+
+    // --- HIỆU ỨNG TÊN FILE ---
+    function updateFileName(input) {
+        const fileNameSpan = document.getElementById('fileName');
+        if (input.files && input.files.length > 0) {
+            fileNameSpan.innerHTML = `<i class="bi bi-image"></i> ${input.files[0].name}`;
+            fileNameSpan.style.color = '#0056b3';
+            fileNameSpan.style.fontWeight = 'bold';
+        } else {
+            fileNameSpan.innerHTML = '<i class="bi bi-cloud-upload"></i> Chạm để chọn ảnh';
+            fileNameSpan.style.color = '#6c757d';
+        }
+    }
+
+    // --- LOGIC GỬI BÁO CÁO ---
+    const form = document.getElementById('incidentForm');
+    const btnSubmit = document.getElementById('btnSubmit');
+    const reportMsg = document.getElementById('reportMsg');
+
+    form.addEventListener('submit', async function(e) {
+        e.preventDefault();
+        
+        // Hiệu ứng loading
+        const originalBtnContent = btnSubmit.innerHTML;
+        btnSubmit.disabled = true;
+        btnSubmit.innerHTML = `<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Đang gửi...`;
+        reportMsg.style.display = 'none';
+
+        const formData = new FormData(form);
+        formData.append("action", "report"); 
+
+        try {
+            const response = await fetch(WEBHOOK_URL, {
+                method: 'POST',
+                body: formData
+            });
+
+            if (response.ok) {
+                reportMsg.className = 'alert alert-success';
+                reportMsg.innerHTML = `<i class="bi bi-check-circle-fill"></i> Gửi thành công!`;
+                reportMsg.style.display = 'block';
+                form.reset();
+                updateFileName(document.querySelector('input[type=file]')); // Reset tên file
+            } else {
+                throw new Error("Lỗi kết nối Server");
+            }
+        } catch (error) {
+            reportMsg.className = 'alert alert-danger';
+            reportMsg.innerText = "❌ Lỗi: " + error.message;
+            reportMsg.style.display = 'block';
+        } finally {
+            btnSubmit.disabled = false;
+            btnSubmit.innerHTML = originalBtnContent;
+        }
+    });
+
+    // --- LOGIC TRA CỨU ---
+    async function searchStudent() {
+        const id = document.getElementById('searchId').value.trim();
+        if(!id) return alert("Vui lòng nhập mã học sinh!");
+
+        const loading = document.getElementById('searchLoading');
+        const resultArea = document.getElementById('searchResult');
+        
+        loading.style.display = 'block';
+        resultArea.style.display = 'none';
+
+        const formData = new FormData();
+        formData.append("action", "search");
+        formData.append("student_id", id);
+
+        try {
+            const res = await fetch(WEBHOOK_URL, { method: 'POST', body: formData });
+            const data = await res.json();
+            
+            if(data.student_info && data.student_info.name) {
+                const info = data.student_info;
+                
+                // Render HTML kết quả đẹp
+                let historyHtml = '';
+                const history = Array.isArray(data.history) ? data.history : (data.history ? [data.history] : []);
+
+                if (history.length > 0 && history[0].case_id) {
+                     history.forEach(item => {
+                        let badgeColor = item.status === 'OPEN' ? 'bg-danger' : 'bg-success';
+                        let statusText = item.status === 'OPEN' ? 'Chưa xử lý' : 'Đã xong';
+                        
+                        historyHtml += `
+                            <div class="border-bottom py-2">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <span class="fw-bold text-dark">${item.violation_type}</span>
+                                    <span class="badge ${badgeColor}">${statusText}</span>
+                                </div>
+                                <div class="small text-muted mt-1">
+                                    <i class="bi bi-clock"></i> ${new Date(item.created_at).toLocaleDateString('vi-VN')}
+                                    &nbsp;|&nbsp; 
+                                    <span class="text-warning fw-bold">${item.current_stage}</span>
+                                </div>
+                            </div>
+                        `;
+                    });
+                } else {
+                    historyHtml = '<div class="text-center text-muted py-3">Chưa có ghi nhận vi phạm nào.</div>';
+                }
+
+                resultArea.innerHTML = `
+                    <div class="search-result-card">
+                        <h5 class="fw-bold text-primary mb-1">${info.name}</h5>
+                        <p class="text-muted small mb-2">${info.class_name} | ${info.status}</p>
+                        
+                        ${info.drive_folder_link ? `<a href="${info.drive_folder_link}" target="_blank" class="btn btn-sm btn-outline-primary w-100 mb-3"><i class="bi bi-folder-symlink"></i> Mở Hồ Sơ Drive</a>` : ''}
+                        
+                        <div class="bg-white p-3 rounded border">
+                            <h6 class="fw-bold border-bottom pb-2 mb-2"><i class="bi bi-clock-history"></i> Lịch Sử Vi Phạm</h6>
+                            ${historyHtml}
+                        </div>
+                    </div>
+                `;
+                resultArea.style.display = 'block';
+            } else {
+                resultArea.innerHTML = `<div class="alert alert-warning mt-3">⚠️ Không tìm thấy học sinh mã <b>${id}</b></div>`;
+                resultArea.style.display = 'block';
+            }
+
+        } catch (err) {
+            alert("Lỗi tra cứu: " + err.message);
+        } finally {
+            loading.style.display = 'none';
+        }
+    }
+</script>
+
+</body>
+</html>
