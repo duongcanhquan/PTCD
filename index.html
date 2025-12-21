@@ -3,10 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Hệ Thống Theo Dõi 9+</title>
+    <title>Hệ Thống Kỷ Luật 9+</title>
     <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700&display=swap" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
     
     <style>
         :root { --primary-color: #0056b3; --bg-color: #f0f4f8; }
@@ -20,7 +19,6 @@
         .btn-submit { background: linear-gradient(45deg, #0056b3, #004494); border: none; border-radius: 12px; padding: 12px; font-weight: 700; color: white; }
         .search-item { cursor: pointer; transition: background 0.2s; }
         .search-item:hover { background-color: #f8f9fa; }
-        .status-badge { font-size: 0.75rem; padding: 4px 8px; border-radius: 6px; }
     </style>
 </head>
 <body>
@@ -28,7 +26,7 @@
 <div class="app-container">
     <div class="header-section">
         <img src="https://raw.githubusercontent.com/duongcanhquan/image/main/logo%20vietmy.webp" alt="Logo" class="logo-img">
-        <h5 class="fw-bold text-primary">QUẢN LÝ KỶ LUẬT HỌC SINH v1</h5>
+        <h5 class="fw-bold text-primary">QUẢN LÝ KỶ LUẬT HỌC SINH</h5>
     </div>
 
     <div class="card main-card">
@@ -71,14 +69,9 @@
 
                         <div class="form-floating mb-3">
                             <textarea class="form-control" name="description" style="height: 100px" placeholder="Chi tiết" required></textarea>
-                            <label>Chi tiết sự việc & Lý do</label>
+                            <label>Chi tiết sự việc</label>
                         </div>
-
-                        <div class="mb-3 border p-2 rounded bg-light">
-                            <label class="small text-muted mb-1">📸 Ảnh bằng chứng:</label>
-                            <input type="file" class="form-control" name="data" accept="image/*" required>
-                        </div>
-
+                        
                         <button type="submit" class="btn btn-primary w-100 btn-submit" id="btnSubmit">GỬI BÁO CÁO</button>
                     </form>
                     <div id="reportMsg" class="alert mt-3 text-center" style="display:none;"></div>
@@ -93,7 +86,6 @@
                     <div id="searchLoading" class="text-center py-3 d-none">
                         <div class="spinner-border text-primary spinner-border-sm"></div> Đang tìm kiếm...
                     </div>
-
                     <div id="searchResult"></div>
                 </div>
             </div>
@@ -111,15 +103,10 @@
             <div class="modal-body">
                 <form id="formClose">
                     <input type="hidden" name="case_id" id="modalCaseId">
-                    <input type="hidden" name="student_id" id="modalStudentId"> <p class="small text-muted mb-2">Đang xử lý hồ sơ: <b id="displayCaseId" class="text-primary">...</b></p>
+                    <p class="small text-muted mb-2">Hồ sơ: <b id="displayCaseId" class="text-primary">...</b></p>
                     
                     <div class="mb-3">
-                        <textarea class="form-control" name="note" placeholder="Ghi chú xử lý (VD: Đã viết bản kiểm điểm, Đã gọi PH...)" rows="3" required></textarea>
-                    </div>
-                    
-                    <div class="mb-3">
-                        <label class="small text-muted mb-1">📸 Ảnh Biên bản / Cam kết (Bắt buộc):</label>
-                        <input type="file" class="form-control" name="data" accept="image/*" required>
+                        <textarea class="form-control" name="note" placeholder="Ghi chú xử lý (VD: Đã viết bản kiểm điểm...)" rows="3" required></textarea>
                     </div>
 
                     <button type="submit" class="btn btn-success w-100 fw-bold" id="btnClose">CẬP NHẬT ĐÃ XONG</button>
@@ -132,45 +119,43 @@
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 <script>
-    // ⚠️ QUAN TRỌNG: DÁN LINK WEBHOOK CỦA BẠN VÀO ĐÂY
-    // Dùng link Test (để hiện dữ liệu trong Editor) hoặc link Production (để chạy thật)
-    const WEBHOOK_URL = 'https://apchn-host.lapage.vn/webhook/incident-api'; 
+    // ⚠️ DÁN LINK WEBHOOK CỦA BẠN VÀO ĐÂY (Link Production cũng được vì ko còn test file nữa)
+    const WEBHOOK_URL = 'https://apchn-host.lapage.vn/webhook-test/incident-api'; 
 
-    // --- 1. XỬ LÝ GỬI BÁO CÁO ---
+    // --- 1. GỬI BÁO CÁO ---
     const formReport = document.getElementById('incidentForm');
     const btnSubmit = document.getElementById('btnSubmit');
     const reportMsg = document.getElementById('reportMsg');
 
     formReport.addEventListener('submit', async function(e) {
         e.preventDefault();
+        // Gửi form dạng JSON thông thường (không cần FormData binary nữa)
+        // Nhưng để tương thích code cũ n8n, ta cứ dùng FormData cho tiện
         handleFormSubmit(formReport, btnSubmit, 'report', reportMsg, "GỬI BÁO CÁO");
     });
 
-    // --- 2. XỬ LÝ ĐÓNG HỒ SƠ (CLOSE CASE) ---
+    // --- 2. XỬ LÝ ĐÓNG HỒ SƠ ---
     const formClose = document.getElementById('formClose');
     const btnClose = document.getElementById('btnClose');
     const msgClose = document.getElementById('msgClose');
 
     formClose.addEventListener('submit', async function(e) {
         e.preventDefault();
-        // action="close_case" khớp với nhánh 3 trong n8n
         await handleFormSubmit(formClose, btnClose, 'close_case', msgClose, "CẬP NHẬT ĐÃ XONG");
         
-        // Nếu thành công thì reload lại tìm kiếm sau 1.5s để cập nhật trạng thái
         if(msgClose.classList.contains('alert-success')) {
             setTimeout(() => {
                 bootstrap.Modal.getInstance(document.getElementById('closeModal')).hide();
-                searchStudent(); // Load lại danh sách
-                msgClose.classList.add('d-none'); // Reset thông báo modal
+                searchStudent();
+                msgClose.classList.add('d-none');
                 formClose.reset();
             }, 1500);
         }
     });
 
-    // --- HÀM GỬI FORM CHUNG (Cho gọn code) ---
+    // --- HÀM GỬI CHUNG ---
     async function handleFormSubmit(formEl, btnEl, actionName, msgEl, defaultBtnText) {
-        btnEl.disabled = true; 
-        btnEl.innerText = "Đang xử lý...";
+        btnEl.disabled = true; btnEl.innerText = "Đang xử lý...";
         msgEl.style.display = 'none';
 
         const formData = new FormData(formEl);
@@ -184,7 +169,7 @@
             if (data.success) {
                 msgEl.className = 'alert alert-success mt-2';
                 msgEl.innerHTML = `✅ ${data.message}`;
-                if(actionName === 'report') formEl.reset(); // Chỉ reset form báo cáo ngay
+                if(actionName === 'report') formEl.reset();
             } else {
                 msgEl.className = 'alert alert-danger mt-2';
                 msgEl.innerHTML = `❌ ${data.message}`;
@@ -194,16 +179,14 @@
             msgEl.className = 'alert alert-danger mt-2';
             msgEl.innerText = "Lỗi kết nối: " + err.message;
         } finally {
-            btnEl.disabled = false; 
-            btnEl.innerText = defaultBtnText;
+            btnEl.disabled = false; btnEl.innerText = defaultBtnText;
         }
     }
 
-    // --- 3. TRA CỨU HỌC SINH ---
+    // --- 3. TRA CỨU ---
     async function searchStudent() {
         const name = document.getElementById('searchName').value.trim();
         if(!name) return;
-
         document.getElementById('searchLoading').classList.remove('d-none');
         document.getElementById('searchResult').innerHTML = '';
 
@@ -215,23 +198,18 @@
             const res = await fetch(WEBHOOK_URL, { method: 'POST', body: formData });
             const data = await res.json();
             renderSearchResults(data);
-        } catch (err) {
-            alert("Lỗi: " + err.message);
-        } finally {
-            document.getElementById('searchLoading').classList.add('d-none');
-        }
+        } catch (err) { alert("Lỗi: " + err.message); } 
+        finally { document.getElementById('searchLoading').classList.add('d-none'); }
     }
 
     function renderSearchResults(data) {
         const container = document.getElementById('searchResult');
         if (!data || data.length === 0) {
-            container.innerHTML = '<div class="alert alert-warning text-center">Không tìm thấy học sinh nào.</div>';
+            container.innerHTML = '<div class="alert alert-warning text-center">Không tìm thấy học sinh.</div>';
             return;
         }
-
         let html = '';
         data.forEach(s => {
-            // Đếm số lỗi đang mở
             const openErrors = s.history ? s.history.filter(h => h.status === 'OPEN').length : 0;
             const badge = openErrors > 0 
                 ? `<span class="badge bg-danger">${openErrors} lỗi cần xử lý</span>`
@@ -248,64 +226,46 @@
                             ${badge}
                         </div>
                     </div>
-                    
                     <div id="hist-${s.student_id}" class="bg-light border-top p-3" style="display:none;">
                         <h6 class="fw-bold small border-bottom pb-2">Lịch sử vi phạm:</h6>
                         ${renderHistoryRows(s.history, s.student_id)}
-                        
-                        ${s.drive_folder_link ? 
-                            `<div class="mt-2 text-center"><a href="${s.drive_folder_link}" target="_blank" class="btn btn-sm btn-outline-primary w-100">📂 Xem Folder Ảnh Gốc</a></div>` 
-                            : ''}
+                        ${s.drive_folder_link ? `<div class="mt-2 text-center"><a href="${s.drive_folder_link}" target="_blank" class="btn btn-sm btn-outline-primary w-100">📂 Mở Folder HS</a></div>` : ''}
                     </div>
-                </div>
-            `;
+                </div>`;
         });
         container.innerHTML = html;
     }
 
     function renderHistoryRows(history, studentId) {
         if(!history || history.length === 0) return '<div class="small text-muted fst-italic">Chưa có dữ liệu.</div>';
-        
         let rows = '';
         history.forEach(h => {
-            // Nếu trạng thái là OPEN thì hiện nút Xử lý, nếu DONE thì hiện chữ Đã xong
             const actionBtn = h.status === 'OPEN' 
-                ? `<button class="btn btn-sm btn-success ms-2 py-0 px-2" style="font-size: 12px;" onclick="openCloseModal(event, '${h.case_id}', '${studentId}')">✅ Xử lý</button>`
-                : `<span class="text-success fw-bold ms-2" style="font-size: 12px;">✔ Đã xong</span>`;
+                ? `<button class="btn btn-sm btn-success ms-2 py-0 px-2" onclick="openCloseModal(event, '${h.case_id}')">✅ Xử lý</button>`
+                : `<span class="text-success fw-bold ms-2 small">✔ Đã xong</span>`;
 
             rows += `
                 <div class="d-flex justify-content-between align-items-center small mb-2 border-bottom pb-1">
-                    <div>
-                        <div><b>${h.violation_type}</b> <span class="text-muted">(${new Date(h.created_at).toLocaleDateString('vi-VN')})</span></div>
-                        <div class="text-muted fst-italic">${h.current_stage}</div>
-                    </div>
-                    <div class="text-end">
-                        ${actionBtn}
-                    </div>
+                    <div><b>${h.violation_type}</b> <span class="text-muted">(${new Date(h.created_at).toLocaleDateString('vi-VN')})</span><br><i class="text-muted">${h.current_stage}</i></div>
+                    <div>${actionBtn}</div>
                 </div>`;
         });
         return rows;
     }
 
     function toggleHistory(id) {
-        const el = document.getElementById(`hist-${id}`);
-        // Chỉ toggle nếu không phải đang click vào nút Xử lý
         if(window.event.target.tagName !== 'BUTTON') {
+            const el = document.getElementById(`hist-${id}`);
             el.style.display = el.style.display === 'none' ? 'block' : 'none';
         }
     }
 
-    // Mở Modal Xử lý
-    function openCloseModal(e, caseId, studentId) {
-        e.stopPropagation(); // Ngăn việc click nút mà lại đóng mở cái accordion
+    function openCloseModal(e, caseId) {
+        e.stopPropagation();
         document.getElementById('modalCaseId').value = caseId;
-        document.getElementById('modalStudentId').value = studentId;
         document.getElementById('displayCaseId').innerText = caseId;
-        
-        // Reset form modal
         document.getElementById('formClose').reset();
         document.getElementById('msgClose').className = 'd-none';
-
         new bootstrap.Modal(document.getElementById('closeModal')).show();
     }
 </script>
