@@ -10,16 +10,17 @@
     
     <style>
         :root { --primary-color: #0056b3; --bg-color: #f0f4f8; }
-        body { font-family: 'Nunito', sans-serif; background-color: var(--bg-color); min-height: 100vh; }
-        .app-container { max-width: 600px; margin: 0 auto; padding-bottom: 50px; }
+        body { font-family: 'Nunito', sans-serif; background-color: var(--bg-color); min-height: 100vh; padding-bottom: 80px;}
+        .app-container { max-width: 600px; margin: 0 auto; }
         .header-section { text-align: center; padding: 30px 20px 20px; }
-        .logo-img { width: 100px; margin-bottom: 10px; }
+        .logo-img { width: 80px; margin-bottom: 10px; }
         .main-card { border-radius: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.08); border: none; overflow: hidden; margin: 0 15px; background: white; }
         .nav-tabs .nav-link.active { background-color: white; color: var(--primary-color); border-bottom: 3px solid var(--primary-color); }
         .nav-tabs .nav-link { color: #6c757d; font-weight: 600; border: none; padding: 15px; }
         .btn-submit { background: linear-gradient(45deg, #0056b3, #004494); border: none; border-radius: 12px; padding: 12px; font-weight: 700; color: white; }
         .search-item { cursor: pointer; transition: background 0.2s; }
-        .search-item:hover { background-color: #f1f3f5; }
+        .search-item:hover { background-color: #f8f9fa; }
+        .status-badge { font-size: 0.75rem; padding: 4px 8px; border-radius: 6px; }
     </style>
 </head>
 <body>
@@ -27,7 +28,7 @@
 <div class="app-container">
     <div class="header-section">
         <img src="https://raw.githubusercontent.com/duongcanhquan/image/main/logo%20vietmy.webp" alt="Logo" class="logo-img">
-        <h4 class="fw-bold text-primary">HỆ THỐNG THEO DÕI HỌC SINH 9+</h4>
+        <h5 class="fw-bold text-primary">QUẢN LÝ KỶ LUẬT HỌC SINH</h5>
     </div>
 
     <div class="card main-card">
@@ -36,7 +37,7 @@
             <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#search-pane">🔍 Tra Cứu</button></li>
         </ul>
 
-        <div class="card-body p-4">
+        <div class="card-body p-3">
             <div class="tab-content">
                 
                 <div class="tab-pane fade show active" id="report-pane">
@@ -74,7 +75,7 @@
                         </div>
 
                         <div class="mb-3 border p-2 rounded bg-light">
-                            <label class="small text-muted mb-1">📸 Ảnh/Biên bản:</label>
+                            <label class="small text-muted mb-1">📸 Ảnh bằng chứng:</label>
                             <input type="file" class="form-control" name="data" accept="image/*" required>
                         </div>
 
@@ -100,47 +101,108 @@
     </div>
 </div>
 
+<div class="modal fade" id="closeModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h6 class="modal-title fw-bold">Xác nhận xử lý vi phạm?</h6>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="formClose">
+                    <input type="hidden" name="case_id" id="modalCaseId">
+                    <input type="hidden" name="student_id" id="modalStudentId"> <p class="small text-muted mb-2">Đang xử lý hồ sơ: <b id="displayCaseId" class="text-primary">...</b></p>
+                    
+                    <div class="mb-3">
+                        <textarea class="form-control" name="note" placeholder="Ghi chú xử lý (VD: Đã viết bản kiểm điểm, Đã gọi PH...)" rows="3" required></textarea>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="small text-muted mb-1">📸 Ảnh Biên bản / Cam kết (Bắt buộc):</label>
+                        <input type="file" class="form-control" name="data" accept="image/*" required>
+                    </div>
+
+                    <button type="submit" class="btn btn-success w-100 fw-bold" id="btnClose">CẬP NHẬT ĐÃ XONG</button>
+                </form>
+                <div id="msgClose" class="alert mt-2 d-none small"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 <script>
-    // ⚠️ DÁN WEBHOOK CỦA BẠN VÀO ĐÂY
+    // ⚠️ QUAN TRỌNG: DÁN LINK WEBHOOK CỦA BẠN VÀO ĐÂY
+    // Dùng link Test (để hiện dữ liệu trong Editor) hoặc link Production (để chạy thật)
     const WEBHOOK_URL = 'https://apchn-host.lapage.vn/webhook-test/incident-api'; 
 
-    // --- XỬ LÝ BÁO CÁO ---
-    const form = document.getElementById('incidentForm');
+    // --- 1. XỬ LÝ GỬI BÁO CÁO ---
+    const formReport = document.getElementById('incidentForm');
     const btnSubmit = document.getElementById('btnSubmit');
     const reportMsg = document.getElementById('reportMsg');
 
-    form.addEventListener('submit', async function(e) {
+    formReport.addEventListener('submit', async function(e) {
         e.preventDefault();
-        btnSubmit.disabled = true; btnSubmit.innerText = "Đang xử lý...";
+        handleFormSubmit(formReport, btnSubmit, 'report', reportMsg, "GỬI BÁO CÁO");
+    });
+
+    // --- 2. XỬ LÝ ĐÓNG HỒ SƠ (CLOSE CASE) ---
+    const formClose = document.getElementById('formClose');
+    const btnClose = document.getElementById('btnClose');
+    const msgClose = document.getElementById('msgClose');
+
+    formClose.addEventListener('submit', async function(e) {
+        e.preventDefault();
+        // action="close_case" khớp với nhánh 3 trong n8n
+        await handleFormSubmit(formClose, btnClose, 'close_case', msgClose, "CẬP NHẬT ĐÃ XONG");
         
-        const formData = new FormData(form);
-        formData.append("action", "report"); 
+        // Nếu thành công thì reload lại tìm kiếm sau 1.5s để cập nhật trạng thái
+        if(msgClose.classList.contains('alert-success')) {
+            setTimeout(() => {
+                bootstrap.Modal.getInstance(document.getElementById('closeModal')).hide();
+                searchStudent(); // Load lại danh sách
+                msgClose.classList.add('d-none'); // Reset thông báo modal
+                formClose.reset();
+            }, 1500);
+        }
+    });
+
+    // --- HÀM GỬI FORM CHUNG (Cho gọn code) ---
+    async function handleFormSubmit(formEl, btnEl, actionName, msgEl, defaultBtnText) {
+        btnEl.disabled = true; 
+        btnEl.innerText = "Đang xử lý...";
+        msgEl.style.display = 'none';
+
+        const formData = new FormData(formEl);
+        formData.append("action", actionName);
 
         try {
             const res = await fetch(WEBHOOK_URL, { method: 'POST', body: formData });
             const data = await res.json();
 
+            msgEl.style.display = 'block';
             if (data.success) {
-                reportMsg.className = 'alert alert-success';
-                reportMsg.innerHTML = `✅ ${data.message}`;
-                form.reset();
+                msgEl.className = 'alert alert-success mt-2';
+                msgEl.innerHTML = `✅ ${data.message}`;
+                if(actionName === 'report') formEl.reset(); // Chỉ reset form báo cáo ngay
             } else {
-                reportMsg.className = 'alert alert-danger';
-                reportMsg.innerHTML = `❌ ${data.message}`; // Hiện lỗi nếu sai tên/lớp
+                msgEl.className = 'alert alert-danger mt-2';
+                msgEl.innerHTML = `❌ ${data.message}`;
             }
-            reportMsg.style.display = 'block';
         } catch (err) {
-            alert("Lỗi kết nối: " + err.message);
+            msgEl.style.display = 'block';
+            msgEl.className = 'alert alert-danger mt-2';
+            msgEl.innerText = "Lỗi kết nối: " + err.message;
         } finally {
-            btnSubmit.disabled = false; btnSubmit.innerText = "GỬI BÁO CÁO";
+            btnEl.disabled = false; 
+            btnEl.innerText = defaultBtnText;
         }
-    });
+    }
 
-    // --- XỬ LÝ TRA CỨU ---
+    // --- 3. TRA CỨU HỌC SINH ---
     async function searchStudent() {
         const name = document.getElementById('searchName').value.trim();
-        if(!name) return alert("Vui lòng nhập tên!");
+        if(!name) return;
 
         document.getElementById('searchLoading').classList.remove('d-none');
         document.getElementById('searchResult').innerHTML = '';
@@ -167,34 +229,33 @@
             return;
         }
 
-        let html = '<p class="small text-muted mb-2">Chọn học sinh để xem chi tiết:</p>';
-        
-        data.forEach(student => {
-            // Màu sắc trạng thái vi phạm
-            let statusBadge = '';
-            if(student.history && student.history.length > 0) {
-                const openCases = student.history.filter(h => h.status === 'OPEN').length;
-                if(openCases > 0) statusBadge = `<span class="badge bg-danger ms-2">${openCases} vi phạm chưa xử lý</span>`;
-                else statusBadge = `<span class="badge bg-success ms-2">Hạnh kiểm tốt</span>`;
-            } else {
-                statusBadge = `<span class="badge bg-success ms-2">Chưa có vi phạm</span>`;
-            }
+        let html = '';
+        data.forEach(s => {
+            // Đếm số lỗi đang mở
+            const openErrors = s.history ? s.history.filter(h => h.status === 'OPEN').length : 0;
+            const badge = openErrors > 0 
+                ? `<span class="badge bg-danger">${openErrors} lỗi cần xử lý</span>`
+                : `<span class="badge bg-success">Hạnh kiểm tốt</span>`;
 
-            // Hiển thị từng học sinh tìm được
             html += `
-                <div class="card mb-2 search-item border" onclick="toggleHistory('${student.student_id}')">
-                    <div class="card-body p-3 d-flex justify-content-between align-items-center">
-                        <div>
-                            <h6 class="fw-bold mb-0 text-primary">${student.name}</h6>
-                            <div class="small text-muted">Lớp: <b>${student.class_name}</b> | Mã: ${student.student_id}</div>
+                <div class="card mb-2 search-item border">
+                    <div class="card-body p-3" onclick="toggleHistory('${s.student_id}')">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <h6 class="fw-bold mb-0 text-primary">${s.name}</h6>
+                                <div class="small text-muted">${s.class_name} | ${s.student_id}</div>
+                            </div>
+                            ${badge}
                         </div>
-                        ${statusBadge}
                     </div>
                     
-                    <div id="hist-${student.student_id}" class="bg-light border-top p-3" style="display:none;">
-                         <h6 class="fw-bold small border-bottom pb-2">Lịch sử ghi nhận:</h6>
-                         ${renderHistoryTable(student.history)}
-                         ${student.drive_folder_link ? `<a href="${student.drive_folder_link}" target="_blank" class="btn btn-sm btn-outline-primary mt-2 w-100">📂 Xem Folder Ảnh</a>` : ''}
+                    <div id="hist-${s.student_id}" class="bg-light border-top p-3" style="display:none;">
+                        <h6 class="fw-bold small border-bottom pb-2">Lịch sử vi phạm:</h6>
+                        ${renderHistoryRows(s.history, s.student_id)}
+                        
+                        ${s.drive_folder_link ? 
+                            `<div class="mt-2 text-center"><a href="${s.drive_folder_link}" target="_blank" class="btn btn-sm btn-outline-primary w-100">📂 Xem Folder Ảnh Gốc</a></div>` 
+                            : ''}
                     </div>
                 </div>
             `;
@@ -202,15 +263,25 @@
         container.innerHTML = html;
     }
 
-    function renderHistoryTable(history) {
-        if(!history || history.length === 0) return '<div class="small text-muted fst-italic">Chưa có dữ liệu vi phạm.</div>';
+    function renderHistoryRows(history, studentId) {
+        if(!history || history.length === 0) return '<div class="small text-muted fst-italic">Chưa có dữ liệu.</div>';
         
         let rows = '';
         history.forEach(h => {
-             rows += `
-                <div class="d-flex justify-content-between small mb-2 border-bottom pb-1">
-                    <span>${new Date(h.created_at).toLocaleDateString('vi-VN')} - <b>${h.violation_type}</b></span>
-                    <span class="${h.status === 'OPEN' ? 'text-danger fw-bold' : 'text-success'}">${h.status === 'OPEN' ? h.current_stage : 'Đã xong'}</span>
+            // Nếu trạng thái là OPEN thì hiện nút Xử lý, nếu DONE thì hiện chữ Đã xong
+            const actionBtn = h.status === 'OPEN' 
+                ? `<button class="btn btn-sm btn-success ms-2 py-0 px-2" style="font-size: 12px;" onclick="openCloseModal(event, '${h.case_id}', '${studentId}')">✅ Xử lý</button>`
+                : `<span class="text-success fw-bold ms-2" style="font-size: 12px;">✔ Đã xong</span>`;
+
+            rows += `
+                <div class="d-flex justify-content-between align-items-center small mb-2 border-bottom pb-1">
+                    <div>
+                        <div><b>${h.violation_type}</b> <span class="text-muted">(${new Date(h.created_at).toLocaleDateString('vi-VN')})</span></div>
+                        <div class="text-muted fst-italic">${h.current_stage}</div>
+                    </div>
+                    <div class="text-end">
+                        ${actionBtn}
+                    </div>
                 </div>`;
         });
         return rows;
@@ -218,7 +289,24 @@
 
     function toggleHistory(id) {
         const el = document.getElementById(`hist-${id}`);
-        el.style.display = el.style.display === 'none' ? 'block' : 'none';
+        // Chỉ toggle nếu không phải đang click vào nút Xử lý
+        if(window.event.target.tagName !== 'BUTTON') {
+            el.style.display = el.style.display === 'none' ? 'block' : 'none';
+        }
+    }
+
+    // Mở Modal Xử lý
+    function openCloseModal(e, caseId, studentId) {
+        e.stopPropagation(); // Ngăn việc click nút mà lại đóng mở cái accordion
+        document.getElementById('modalCaseId').value = caseId;
+        document.getElementById('modalStudentId').value = studentId;
+        document.getElementById('displayCaseId').innerText = caseId;
+        
+        // Reset form modal
+        document.getElementById('formClose').reset();
+        document.getElementById('msgClose').className = 'd-none';
+
+        new bootstrap.Modal(document.getElementById('closeModal')).show();
     }
 </script>
 </body>
